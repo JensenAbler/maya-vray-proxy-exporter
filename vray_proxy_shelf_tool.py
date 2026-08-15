@@ -68,7 +68,8 @@ if filename and filename not in ("Cancel", "dismiss"):
     if isinstance(proxy, (list, tuple)):
         proxy = proxy[0]
 
-    proxy = (cmds.listRelatives(proxy, shapes=True, fullPath=True) or [proxy])[0]
+    children = cmds.listRelatives(proxy, children=True, fullPath=True) or []
+    proxy = next(node for node in children if cmds.nodeType(node) == "VRayProxy")
 
     mel.eval(
         'vrayExportProxyRules "{}" "{}";'.format(
