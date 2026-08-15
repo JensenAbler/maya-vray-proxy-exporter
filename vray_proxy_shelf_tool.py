@@ -9,25 +9,32 @@ ui = {}
 
 
 def assigned_materials(nodes):
-    materials = []
+    shapes = []
     for node in nodes:
-        shapes = [node]
-        if cmds.nodeType(node) == "transform":
-            shapes = cmds.listRelatives(
-                node, allDescendents=True, shapes=True, fullPath=True
+        found = [node] if cmds.nodeType(node) == "mesh" else cmds.ls(
+            node, dagObjects=True, shapes=True, long=True, type="mesh"
+        ) or []
+        for shape in found:
+            if shape not in shapes:
+                shapes.append(shape)
+
+    materials = []
+    for shape in shapes:
+        shading_groups = cmds.listConnections(
+            shape + ".instObjGroups",
+            source=False,
+            destination=True,
+            type="shadingEngine",
+        ) or []
+        for shading_group in shading_groups:
+            connected = cmds.listConnections(
+                shading_group + ".surfaceShader",
+                source=True,
+                destination=False,
             ) or []
-        for shape in shapes:
-            for shading_group in cmds.listConnections(
-                shape, type="shadingEngine"
-            ) or []:
-                connected = cmds.listConnections(
-                    shading_group + ".surfaceShader",
-                    source=True,
-                    destination=False,
-                ) or []
-                for material in connected:
-                    if material not in materials:
-                        materials.append(material)
+            for material in connected:
+                if material not in materials:
+                    materials.append(material)
     return materials
 
 
@@ -77,6 +84,8 @@ if filename and filename not in ("Cancel", "dismiss"):
     xml = os.path.splitext(path)[0] + ".xml"
     folder = folder.replace("\\", "/")
     materials = assigned_materials(selection)
+    if not materials:
+        cmds.error("No materials were found on the selected geometry.")
 
     mel.eval(
         'vrayCreateProxy -exportType 1 -previewFaces 10000 '
@@ -99,7 +108,18 @@ if filename and filename not in ("Cancel", "dismiss"):
     children = cmds.listRelatives(proxy, children=True, fullPath=True) or []
     proxy = next(node for node in children if cmds.nodeType(node) == "VRayProxy")
 
-    for index, material in enumerate(materials):
+    proxy_materials = {
+        name[2:]
+        for name in (cmds.vrayUpdateProxy(proxy, getObjectNames=True) or [])
+        if name.startswith("s:")
+    }
+    matched_materials = [
+        material for material in materials if material in proxy_materials
+    ]
+    if not matched_materials:
+        cmds.error("No source material names matched the proxy shader sets.")
+
+    for index, material in enumerate(matched_materials):
         cmds.setAttr(
             "{}.shadersCustom[{}].shadersCustomNames".format(proxy, index),
             material,
@@ -110,6 +130,21 @@ if filename and filename not in ("Cancel", "dismiss"):
             "{}.shadersCustom[{}].shadersCustomConnections".format(proxy, index),
             force=True,
         )
+
+    complete_rules = 0
+    for index in range(len(matched_materials)):
+        pattern = cmds.getAttr(
+            "{}.shadersCustom[{}].shadersCustomNames".format(proxy, index)
+        )
+        connection = cmds.listConnections(
+            "{}.shadersCustom[{}].shadersCustomConnections".format(proxy, index),
+            source=True,
+            destination=False,
+        ) or []
+        if pattern and connection:
+            complete_rules += 1
+    if not complete_rules:
+        cmds.error("No complete material override rules were created.")
 
     if os.path.exists(xml):
         os.remove(xml)
