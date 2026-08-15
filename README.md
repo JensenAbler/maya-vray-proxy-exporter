@@ -5,7 +5,9 @@ Script Editor tab, select the code, and drag it onto a shelf.
 
 The script shows a filename field with a **Browse** button for choosing an
 existing `.vrmesh` to overwrite, then exports the current selection to
-`<current Maya project>/assets`. It creates a proxy node and writes a same-named
-material-rules `.xml` beside it.
+`<current Maya project>/assets` without replacing the original geometry. It
+loads the exported file as a new proxy, applies shader overrides using the
+materials assigned to the original selection, and writes those rules to a
+same-named `.xml` beside the proxy file.
 
 Reference: https://documentation.chaos.com/space/VMAYA/111741412/vrayCreateProxy
