@@ -68,6 +68,8 @@ if filename and filename not in ("Cancel", "dismiss"):
     if isinstance(proxy, (list, tuple)):
         proxy = proxy[0]
 
+    proxy = (cmds.listRelatives(proxy, shapes=True, fullPath=True) or [proxy])[0]
+
     mel.eval(
         'vrayExportProxyRules "{}" "{}";'.format(
             proxy, xml.replace("\\", "/")
