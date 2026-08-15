@@ -82,6 +82,7 @@ if filename and filename not in ("Cancel", "dismiss"):
 
     path = os.path.join(folder, filename)
     xml = os.path.splitext(path)[0] + ".xml"
+    proxy_name = os.path.splitext(filename)[0] + "_proxy"
     folder = folder.replace("\\", "/")
     materials = assigned_materials(selection)
     if not materials:
@@ -97,8 +98,8 @@ if filename and filename not in ("Cancel", "dismiss"):
     cmds.select(clear=True)
     proxy = mel.eval(
         'vrayCreateProxy -existing -dir "{}" '
-        '-createProxyNode -newProxyNode -node "vrayProxy";'.format(
-            path.replace("\\", "/")
+        '-createProxyNode -newProxyNode -node "{}";'.format(
+            path.replace("\\", "/"), proxy_name
         )
     )
 

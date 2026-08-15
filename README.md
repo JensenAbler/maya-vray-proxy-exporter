@@ -9,6 +9,7 @@ existing `.vrmesh` to overwrite, then exports the current selection to
 loads the exported file as a new proxy, applies shader overrides using the
 materials assigned to the original selection, validates those materials against
 the proxy's embedded shader-set names, and writes the completed rules to a
-same-named `.xml` beside the proxy file.
+same-named `.xml` beside the proxy file. The created proxy is named after the
+`.vrmesh` filename with a `_proxy` suffix.
 
 Reference: https://documentation.chaos.com/space/VMAYA/111741412/vrayCreateProxy
