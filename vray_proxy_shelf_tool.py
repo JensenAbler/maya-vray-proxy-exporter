@@ -1,11 +1,27 @@
 from maya import cmds, mel
 import os
+import re
 
 selection = cmds.ls(selection=True, long=True, objectsOnly=True) or []
-default_name = selection[0].split("|")[-1].replace(":", "_") if selection else "proxy"
+scene_name = os.path.splitext(os.path.basename(cmds.file(query=True, sceneName=True)))[0]
+scene_version_match = re.search(r"(?i)_v(\d+)$", scene_name)
+if not scene_version_match:
+    cmds.error("The current Maya scene filename has no version token such as v001.")
+scene_version = "v" + scene_version_match.group(1)
+base_name = selection[0].split("|")[-1].replace(":", "_") if selection else "proxy"
+default_name = base_name + "_" + scene_version
 folder = os.path.join(cmds.workspace(query=True, rootDirectory=True), "assets")
 os.makedirs(folder, exist_ok=True)
 ui = {}
+
+
+def apply_scene_version(filename):
+    stem, extension = os.path.splitext(filename)
+    if re.search(r"(?i)_v\d+$", stem):
+        stem = re.sub(r"(?i)_v\d+$", "_" + scene_version, stem)
+    else:
+        stem += "_" + scene_version
+    return stem + extension
 
 
 def assigned_materials(nodes):
@@ -79,6 +95,7 @@ if filename and filename not in ("Cancel", "dismiss"):
     filename = os.path.basename(filename.strip())
     if not filename.lower().endswith(".vrmesh"):
         filename += ".vrmesh"
+    filename = apply_scene_version(filename)
 
     path = os.path.join(folder, filename)
     xml = os.path.splitext(path)[0] + ".xml"

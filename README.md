@@ -12,4 +12,9 @@ the proxy's embedded shader-set names, and writes the completed rules to a
 same-named `.xml` beside the proxy file. The created proxy is named after the
 `.vrmesh` filename with a `_proxy` suffix.
 
+The `.vrmesh` filename uses the trailing `_v###` suffix from the current Maya
+scene filename: `_v001.mb` produces `_v001.vrmesh`. A trailing version already
+present in a typed or picked filename is replaced. The export stops if the scene
+has no trailing `_v###` suffix.
+
 Reference: https://documentation.chaos.com/space/VMAYA/111741412/vrayCreateProxy
