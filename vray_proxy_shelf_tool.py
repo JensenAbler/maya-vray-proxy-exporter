@@ -26,30 +26,43 @@ def apply_scene_version(filename):
 
 def assigned_materials(nodes):
     shapes = []
+    seen_shapes = set()
+    materials = []
+    seen_materials = set()
+
     for node in nodes:
         found = [node] if cmds.nodeType(node) == "mesh" else cmds.ls(
             node, dagObjects=True, shapes=True, long=True, type="mesh"
         ) or []
         for shape in found:
-            if shape not in shapes:
+            if shape not in seen_shapes:
+                seen_shapes.add(shape)
                 shapes.append(shape)
 
-    materials = []
     for shape in shapes:
-        shading_groups = cmds.listConnections(
-            shape + ".instObjGroups",
-            source=False,
-            destination=True,
-            type="shadingEngine",
-        ) or []
+        shading_groups = cmds.listSets(type=1, object=shape) or []
+        if not shading_groups:
+            shading_groups = cmds.listConnections(
+                shape,
+                source=False,
+                destination=True,
+                type="shadingEngine",
+            ) or []
+
+        seen_shading_groups = set()
         for shading_group in shading_groups:
+            if shading_group in seen_shading_groups:
+                continue
+            seen_shading_groups.add(shading_group)
+
             connected = cmds.listConnections(
                 shading_group + ".surfaceShader",
                 source=True,
                 destination=False,
             ) or []
             for material in connected:
-                if material not in materials:
+                if material not in seen_materials:
+                    seen_materials.add(material)
                     materials.append(material)
     return materials
 
